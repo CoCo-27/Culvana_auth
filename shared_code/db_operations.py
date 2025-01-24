@@ -20,6 +20,9 @@ class CosmosOperator:
     def get_recipe_container(self):
         return self.get_container("InvoicesDB", "Recipes")
 
+    def get_menu_container(self):
+        return self.get_container("InvoicesDB", "Menu")
+
     def check_user_exists(self, email: str) -> bool:
         container = self.get_culvana_container("users")
         query = "SELECT * FROM c WHERE c.email = @email"

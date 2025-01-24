@@ -3,15 +3,15 @@ import json
 import logging
 from shared_code.db_operations import CosmosOperator
 
-def format_invoice_response(invoice_data):
+def format_recipe_response(recipe):
+   recipe_data = recipe['data']
    return {
-       'Invoice Number': invoice_data['Invoice Number'],
-       'Supplier Name': invoice_data['Supplier Name'],
-       'Order Date': invoice_data['Order Date'],
-       'Ship Date': invoice_data['Ship Date'],
-       'Total': invoice_data['Total'],
-       'Items': invoice_data['Items'],
-       'Shipping Address': invoice_data['Shipping Address'],
+       'Recipe Name': recipe_data['recipe_name'],
+       'Yields': recipe_data['total_yield'],
+       'Servings': recipe_data['servings'],
+       'items_per_serving': recipe_data['items_per_serving'],
+       'Ingredients': recipe_data['ingredients'],
+       'total_cost': recipe_data['total_cost'],
    }
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -20,7 +20,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
        try:
            req_body = req.get_json()
            email = req_body.get('email')
-           print("email = ", email)
+           logging.info(f"Processing recipes request for email: {email}")
        except ValueError:
            return func.HttpResponse(
                json.dumps({"error": "Please provide an email in the request body"}),
@@ -37,10 +37,10 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
 
        # Initialize database operator
        db = CosmosOperator()
-       container = db.get_container("InvoicesDB", "Invoices")
+       container = db.get_container("InvoicesDB", "Menu")
        
-       # Query for specific user's invoices
-       query = "SELECT * FROM c WHERE c.userId = @email"
+       # Query for specific user's recipes
+       query = "SELECT * FROM c WHERE c.id = @email"
        parameters = [{"name": "@email", "value": email}]
            
        items = list(container.query_items(
@@ -52,33 +52,36 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
        if not items:
            return func.HttpResponse(
                json.dumps({
-                   "status": "success", 
-                   "invoices": []
+                   "status": "success",
+                   "menus": []
                }),
                mimetype="application/json",
                status_code=200
            )
-       
-       # Get invoices from the user document
-       invoices = []
+    
+       menus = []
        for item in items:
-           for invoice in item['invoices']:
-               invoices.append(format_invoice_response(invoice))
+            menu_key = f'inventory-items-{email}'
+            if menu_key in item.get('recipes', {}):
+                for recipe in item['recipes'][menu_key]:
+                    if recipe.get('data', {}):
+                        logging.info(f"Processing recipe: {recipe.get('data', {}).get('recipe_name')}")
+                        menus.append(format_recipe_response(recipe))
        
        return func.HttpResponse(
            json.dumps({
                "status": "success", 
-               "invoices": invoices
+               "menus": menus
            }),
            mimetype="application/json",
            status_code=200
        )
        
    except Exception as e:
-       logging.error(f"Error getting invoices: {str(e)}")
+       logging.error(f"Error getting recipes: {str(e)}")
        return func.HttpResponse(
            json.dumps({
-               "error": "Failed to fetch invoices",
+               "error": "Failed to fetch recipes",
                "details": str(e)
            }),
            mimetype="application/json",

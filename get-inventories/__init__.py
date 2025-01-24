@@ -23,6 +23,8 @@ def format_inventory_response(item):
         "Split Price": item.get("Split Price", ""),
         "Cost of a Unit": item.get("Cost of a Unit", ""),
         "Category": item.get("Category", ""),
+        "Location": item.get("Location", ""),
+        "Active": item.get("Active", ""),
         "timestamp": item.get("timestamp", ""),
         "batchNumber": item.get("batchNumber", "")
     }
@@ -32,6 +34,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             req_body = req.get_json()
             email = req_body.get('email')
+            print("EMAIL+++ ", email)
             logging.info(f"Processing inventory request for email: {email}")
         except ValueError:
             return func.HttpResponse(
@@ -60,6 +63,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             parameters=parameters,
             enable_cross_partition_query=True
         ))
+        print("items == ", items)
         
         logging.info(f"Found {len(items)} items in database")
         
