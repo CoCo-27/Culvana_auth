@@ -8,7 +8,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
    logging.info('Processing update user request.')
    
    try:
-       # Parse request body
        req_body = req.get_json()
        logging.info(f"Request body: {req_body}")
        
@@ -19,7 +18,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
        phone_number = req_body.get('phoneNumber')
        country = req_body.get('country')
        
-       # Validate required fields
        if not all([email, first_name, last_name, company_name, phone_number, country]):
            return func.HttpResponse(
                json.dumps({"error": {"message": "All fields are required"}}),
@@ -27,12 +25,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Initialize database operator
        db = CosmosOperator()
        
-       # Check if user exists
        if db.check_user_exists(email):
-           # Get user container and data
            container = db.get_culvana_container("users")
            user = db.get_user_by_email(email)
            
@@ -43,7 +38,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                    mimetype="application/json"
                )
 
-           # Update user information
            user.update({
                "first_name": first_name,
                "last_name": last_name,
@@ -54,7 +48,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                "profileComplete": True
            })
 
-           # Save updated user
            container.upsert_item(user)
 
            return func.HttpResponse(

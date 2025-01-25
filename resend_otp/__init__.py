@@ -20,10 +20,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Initialize database operator
        db = CosmosOperator()
        
-       # Check if there's a pending registration
        temp_container = db.get_culvana_container("temp_registrations")
        query = "SELECT * FROM c WHERE c.email = @email"
        parameters = [{"name": "@email", "value": email}]
@@ -43,21 +41,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
        registration = items[0]
 
-       # Generate new OTP
        otp = generate_otp()
        otp_hash = create_otp_hash(otp)
        expiry_time = datetime.utcnow() + timedelta(minutes=10)
 
-       # Update registration with new OTP
        registration.update({
            "otpHash": otp_hash,
            "expiresAt": expiry_time.isoformat(),
-           "attempts": 0  # Reset attempts counter
+           "attempts": 0
        })
        
        temp_container.upsert_item(registration)
 
-       # Send new OTP
        email_service = EmailService()
        if not email_service.send_otp_email(email, otp):
            return func.HttpResponse(

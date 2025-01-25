@@ -20,12 +20,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
    logging.info('Processing signup request.')
    
    try:
-       # Parse request body
        req_body = req.get_json()
        email = req_body.get('email')
        password = req_body.get('password')
        
-       # Validate required fields
        if not email or not password:
            return func.HttpResponse(
                json.dumps({"error": {"message": "Email and password are required"}}),
@@ -33,7 +31,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Validate password strength
        if len(password) < 8:
            return func.HttpResponse(
                json.dumps({"error": {"message": "Password must be at least 8 characters long"}}),
@@ -41,10 +38,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Initialize database operator
        db = CosmosOperator()
        
-       # Check if user exists
        if db.check_user_exists(email):
            return func.HttpResponse(
                json.dumps({"error": {"message": "Email already registered"}}),
@@ -52,16 +47,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Hash password
        salt = bcrypt.gensalt()
        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
-       # Generate OTP
        otp = generate_otp()
        otp_hash = create_otp_hash(otp)
        expiry_time = datetime.utcnow() + timedelta(minutes=10)
 
-       # Store pending registration
        temp_container = db.get_culvana_container("temp_registrations")
        temp_registration = {
            "id": email,
@@ -75,7 +67,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
        
        temp_container.upsert_item(temp_registration)
 
-       # Send OTP via email
        email_service = EmailService()
        if not email_service.send_otp_email(email, otp):
            return func.HttpResponse(

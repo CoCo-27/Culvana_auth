@@ -80,10 +80,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200
             )
 
-        # Get the first document (should only be one per user)
         doc = items[0]
         
-        # Get items directly from the document
         if not doc.get('items'):
             return func.HttpResponse(
                 json.dumps({
@@ -97,7 +95,6 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200
             )
 
-        # Format all items
         formatted_items = [
             format_inventory_response(item)
             for item in doc.get('items', [])

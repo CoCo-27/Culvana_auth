@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from shared_code.db_operations import CosmosOperator
 from shared_code.otp_utils import create_otp_hash
 
-# Use the same JWT configuration as login
 JWT_SECRET = os.environ['JWT_SECRET']
 REGULAR_TOKEN_EXPIRY = timedelta(hours=24)
 
@@ -34,10 +33,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Initialize database operator
        db = CosmosOperator()
 
-       # Get pending registration
        temp_container = db.get_culvana_container("temp_registrations")
        query = "SELECT * FROM c WHERE c.email = @email"
        parameters = [{"name": "@email", "value": email}]
@@ -57,7 +54,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
        registration = items[0]
        
-       # Check expiry
        if datetime.utcnow() > datetime.fromisoformat(registration['expiresAt']):
            return func.HttpResponse(
                json.dumps({"error": {"message": "Verification code has expired"}}),
@@ -65,7 +61,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Verify OTP
        if create_otp_hash(otp) != registration['otpHash']:
            registration['attempts'] += 1
            temp_container.upsert_item(registration)
@@ -83,7 +78,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Create verified user
        users_container = db.get_culvana_container("users")
        new_user = {
            "id": email,
@@ -97,10 +91,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
        
        users_container.create_item(new_user)
        
-       # Delete temporary registration
        temp_container.delete_item(registration['id'], partition_key=registration['id'])
 
-       # Generate token using the same method as login
        token = generate_token(new_user['id'])
 
        return func.HttpResponse(

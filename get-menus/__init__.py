@@ -16,7 +16,6 @@ def format_recipe_response(recipe):
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
    try:
-       # Get request body
        try:
            req_body = req.get_json()
            email = req_body.get('email')
@@ -35,11 +34,9 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                status_code=400
            )
 
-       # Initialize database operator
        db = CosmosOperator()
        container = db.get_container("InvoicesDB", "Menu")
        
-       # Query for specific user's recipes
        query = "SELECT * FROM c WHERE c.id = @email"
        parameters = [{"name": "@email", "value": email}]
            

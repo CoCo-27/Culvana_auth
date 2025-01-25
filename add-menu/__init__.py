@@ -6,7 +6,6 @@ from datetime import datetime
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        # Get request body
         try:
             req_body = req.get_json()
             email = req_body.get('email')
@@ -25,7 +24,6 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        # Validate required fields
         if not all([email, item_name, category, size, menu_price]):
             return func.HttpResponse(
                 json.dumps({"error": "Missing required fields"}),
@@ -33,15 +31,12 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        # Initialize database operator and get menu container
         db = CosmosOperator()
         container = db.get_menu_container()
 
-        # Get user document
         try:
             user_doc = container.read_item(item=email, partition_key=email)
         except Exception as e:
-            # If user document doesn't exist, create new one
             user_doc = {
                 "id": email,
                 "type": "user",
@@ -50,12 +45,10 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 "last_updated": ""
             }
 
-        # Create recipe ID
         recipe_count = user_doc.get('recipe_count', 0) + 1
         recipe_id = f"{email}_inventory-items-{email}_{recipe_count}"
         current_date = datetime.utcnow().isoformat()
 
-        # Create new recipe
         new_recipe = {
             "id": recipe_id,
             "sequence_number": recipe_count,
@@ -81,7 +74,6 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             }
         }
 
-        # Update user document
         recipe_key = f"inventory-items-{email}"
         if recipe_key not in user_doc.get('recipes', {}):
             user_doc['recipes'][recipe_key] = []
@@ -90,7 +82,6 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         user_doc['recipe_count'] = recipe_count
         user_doc['last_updated'] = current_date
 
-        # Save to database
         result = container.upsert_item(body=user_doc)
 
         return func.HttpResponse(

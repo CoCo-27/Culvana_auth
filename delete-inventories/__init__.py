@@ -28,7 +28,6 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         container = db.get_container("InvoicesDB", "Inventory")
         
         try:
-            # Read the specific document
             document = container.read_item(
                 item=email,
                 partition_key=email

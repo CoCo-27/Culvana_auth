@@ -35,7 +35,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Initialize database operator
        db = CosmosOperator()
        user = db.get_user_by_email(email)
 
@@ -46,7 +45,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Verify password
        stored_password = user.get('passwordHash')
        if not stored_password or not bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
            return func.HttpResponse(
@@ -55,10 +53,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                mimetype="application/json"
            )
 
-       # Generate token
        token = generate_token(user['id'], remember_me)
 
-       # Update last login
        user['lastLogin'] = datetime.utcnow().isoformat()
        container = db.get_culvana_container("users")
        container.upsert_item(user)
