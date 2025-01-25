@@ -12,7 +12,6 @@ class EmailService:
             self.email_client = EmailClient.from_connection_string(connection_string)
             logging.info(f"EmailService initialized with sender: {self.sender_address}")
             
-            # Verify domain setup on initialization
             self.verify_domain_setup()
             
         except Exception as e:
@@ -28,8 +27,6 @@ class EmailService:
             domain = self.sender_address.split('@')[1]
             logging.info(f"Checking domain configuration for: {domain}")
             
-            # Note: Implement actual domain verification logic based on your Azure SDK capabilities
-            # This is a placeholder for domain verification
             return True
             
         except Exception as e:
@@ -95,7 +92,6 @@ class EmailService:
         try:
             logging.info(f"Attempting to send OTP email to {recipient_email}")
             
-            # Create plain text and HTML versions of the message
             plain_text = f"Your verification code is: {otp}\nThis code will expire in 10 minutes."
             html_content = f"""
                 <html>
@@ -113,7 +109,6 @@ class EmailService:
                 </html>
             """
 
-            # Create the email message
             message = self.create_email_message(
                 recipient_email=recipient_email,
                 subject="Your Verification Code",
@@ -121,13 +116,10 @@ class EmailService:
                 html_content=html_content
             )
 
-            # Log the message structure (for debugging)
             logging.info(f"Sending message structure: {message}")
             
-            # Send the email
             poller = self.email_client.begin_send(message)
             
-            # Monitor the operation
             result = self.monitor_send_operation(poller)
             
             if result:
@@ -166,10 +158,8 @@ class EmailService:
                 html_content=html_content
             )
             
-            # Send the email
             poller = self.email_client.begin_send(message)
             
-            # Monitor the operation
             result = self.monitor_send_operation(poller)
             
             if result:

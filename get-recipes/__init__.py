@@ -39,7 +39,6 @@ def format_recipe_response(recipe, inventory_container, email):
     recipe_data = recipe['data']
     total_recipe_cost = 0
     
-    # Enhanced ingredients list with filtered inventory data
     enhanced_ingredients = []
     for ingredient in recipe_data['ingredients']:
         inventory_item = get_inventory_item(inventory_container, email, ingredient.get('ingredient', ''))
@@ -48,7 +47,7 @@ def format_recipe_response(recipe, inventory_container, email):
         total_recipe_cost += ingredient_cost
 
         enhanced_ingredient = {
-            **ingredient,  # Keep all original ingredient data
+            **ingredient,
             'inventory_data': inventory_item if inventory_item else None
         }
         
@@ -65,7 +64,6 @@ def format_recipe_response(recipe, inventory_container, email):
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        # Get request body
         try:
             req_body = req.get_json()
             email = req_body.get('email')
@@ -84,12 +82,10 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        # Initialize database operator
         db = CosmosOperator()
         recipes_container = db.get_container("InvoicesDB", "Recipes")
         inventory_container = db.get_container("InvoicesDB", "Inventory")
         
-        # Query for specific user's recipes
         query = "SELECT * FROM c WHERE c.id = @email"
         parameters = [{"name": "@email", "value": email}]
             
